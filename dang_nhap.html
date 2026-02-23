@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Đăng nhập hệ thống</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h2 style="color: #333;">QUẢN LÝ CỬA HÀNG</h2>
+        <p style="color: #666;">Vui lòng đăng nhập để tiếp tục</p>
+
+        <form onsubmit="return kiemTraDangNhap(event)">
+            <input type="text" id="tai_khoan" placeholder="Tên đăng nhập (VD: admin)">
+            
+            <input type="password" id="mat_khau" placeholder="Mật khẩu...">
+            
+            <button type="submit">ĐĂNG NHẬP</button>
+        </form>
+    </div>
+
+    <script>
+        function kiemTraDangNhap(event) {
+            event.preventDefault(); // Chặn tải lại trang
+
+            var tk = document.getElementById("tai_khoan").value;
+            var mk = document.getElementById("mat_khau").value;
+
+            if (tk === "" || mk === "") {
+                alert("Bạn chưa nhập đủ Tài khoản và Mật khẩu!");
+                return; 
+            }
+
+            // DÙNG FETCH ĐỂ "GỌI ĐIỆN" CHO MÁY CHỦ JAVA Ở CỔNG 8080
+            // Gửi kèm tham số u (user) và p (password)
+            fetch("http://localhost:8080/api/login?u=" + tk + "&p=" + mk)
+                .then(response => response.text()) // Nhận câu trả lời
+                .then(ketQua => {
+                    // Xử lý câu trả lời từ Java gửi về
+                    if (ketQua === "DUNG") {
+                        // 1. Thông báo nhẹ một câu
+                        alert("🎉 Đăng nhập thành công! Đang vào kho hàng...");
+                        
+                        // 2. Lệnh "Dịch chuyển tức thời" sang trang mới
+                        window.location.href = "quan_ly.html"; 
+                    } else {
+                        alert("❌ SAI RỒI! Java báo không tìm thấy tài khoản trong MySQL.");
+                    }
+                });
+        }
+    </script>
+
+</body>
+</html>

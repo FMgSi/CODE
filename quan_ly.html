@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang Quản Trị</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f4f6f9; 
+            padding: 20px; 
+            text-align: center; 
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1); 
+            display: inline-block; 
+            width: 80%; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #007bff; /* Tiêu đề bảng màu xanh */
+            color: white; 
+        }
+        .btn-logout { 
+            padding: 10px 20px; 
+            background-color: #dc3545; /* Nút đỏ */
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 20px; 
+        }
+        .btn-logout:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 TRANG QUẢN TRỊ SẢN PHẨM</h1>
+        <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: left;">
+            <input type="text" id="tu_khoa" placeholder="Nhập tên SP cần tìm..." style="padding: 8px; width: 200px;">
+            <button onclick="timKiem()" style="padding: 8px 12px; background: #17a2b8; color: white; border: none; cursor: pointer;">🔍 Tìm kiếm</button>
+            
+            <span style="margin: 0 10px;">|</span>
+            
+            <button onclick="sapXep('tang')" style="padding: 8px; cursor: pointer;">⬆️ Giá tăng</button>
+            <button onclick="sapXep('giam')" style="padding: 8px; cursor: pointer;">⬇️ Giá giảm</button>
+
+            <button onclick="doiGiaoDien()" style="float: right; padding: 8px; background: #343a40; color: white; border: none; border-radius: 5px; cursor: pointer;">🌙 Chế độ tối</button>
+        </div>
+        <p>Chào mừng Sếp! Dưới đây là kho hàng của chúng ta:</p>
+        <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+            <h3 style="margin-top: 0;">➕ Nhập Sản Phẩm Mới</h3>
+            <input type="text" id="nhap_ma" placeholder="Mã SP (VD: DT05)" style="padding: 8px; width: 120px;">
+            <input type="text" id="nhap_ten" placeholder="Tên hàng" style="padding: 8px; width: 150px;">
+            <input type="text" id="nhap_mau" placeholder="Màu sắc" style="padding: 8px; width: 100px;">
+            <input type="number" id="nhap_gia" placeholder="Giá tiền" style="padding: 8px; width: 120px;">
+            
+            <select id="nhap_loai" style="padding: 8px;">
+                <option value="DienThoai">Điện Thoại</option>
+                <option value="Laptop">Laptop</option>
+            </select>
+            
+            <button onclick="themSanPham()" style="padding: 9px 15px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px;">Thêm Ngay</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã SP</th>
+                    <th>Tên Hàng</th>
+                    <th>Màu Sắc</th>
+                    <th>Giá Tiền</th>
+                    <th>Loại</th>
+                    <th>Hành Động</th> </tr>
+            </thead>
+            <tbody id="bang_san_pham">
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #888;">
+                        ⏳ Đang tải dữ liệu từ MySQL... (Chúng ta sẽ làm ở bài sau)
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn-logout" onclick="dangXuat()">Đăng Xuất</button>
+    </div>
+
+    <script>
+        function dangXuat() {
+            window.location.href = "dang_nhap.html";
+        }
+
+        // HÀM NÀY SẼ TỰ ĐỘNG CHẠY NGAY KHI VỪA MỞ TRANG WEB LÊN
+        window.onload = function() {
+            // 1. Gọi điện đến đường ống lấy sản phẩm
+            fetch("http://localhost:8080/api/sanpham")
+                .then(response => response.json()) // Biến cục hàng gửi về thành mảng JS
+                .then(danhSach => {
+                    // Tìm cái bảng có ID là bang_san_pham
+                    let bang = document.getElementById("bang_san_pham");
+                    
+                    // Xóa trắng cái dòng "Đang tải dữ liệu..." đi
+                    bang.innerHTML = ""; 
+
+                    // 2. Dùng vòng lặp, mỗi sản phẩm tạo ra 1 dòng HTML (<tr>)
+                    // Thêm 1 cột chứa nút Xóa màu đỏ vào cuối mỗi dòng
+                    danhSach.forEach(sp => {
+                        let dongMoi = `
+                            <tr>
+                                <td>${sp.maSP}</td>
+                                <td><b>${sp.tenHang}</b></td>
+                                <td>${sp.mauSac}</td>
+                                <td style="color: red; font-weight: bold;">
+                                    ${sp.giaTien.toLocaleString('vi-VN')} VNĐ
+                                </td>
+                                <td>${sp.loai}</td>
+                                <td>
+                                    <button onclick="suaGia('${sp.maSP}', ${sp.giaTien})" style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px;">Sửa Giá</button>
+                                    
+                                    <button onclick="xoaSanPham('${sp.maSP}')" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Xóa</button>
+                                </td>
+                            </tr>
+                        `;
+                        bang.innerHTML += dongMoi;
+                    });
+                })
+                .catch(error => {
+                    console.log("Lỗi: ", error);
+                    document.getElementById("bang_san_pham").innerHTML = 
+                        "<tr><td colspan='5' style='color:red;'>⚠️ Lỗi mất kết nối với Java Server!</td></tr>";
+                });
+        }
+
+        function themSanPham() {
+            // Lấy chữ người dùng vừa gõ
+            let ma = document.getElementById("nhap_ma").value;
+            let ten = document.getElementById("nhap_ten").value;
+            let mau = document.getElementById("nhap_mau").value;
+            let gia = document.getElementById("nhap_gia").value;
+            let loai = document.getElementById("nhap_loai").value;
+
+            // Kiểm tra xem có để trống ô nào không
+            if (!ma || !ten || !mau || !gia) {
+                alert("Vui lòng điền đầy đủ thông tin!");
+                return;
+            }
+
+            // Gói hàng lại. Dùng encodeURIComponent để xử lý các dấu cách trong tên (Ví dụ: "iPhone 15" -> "iPhone%2015")
+            let url = "http://localhost:8080/api/them?ma=" + ma + 
+                      "&ten=" + encodeURIComponent(ten) + 
+                      "&mau=" + encodeURIComponent(mau) + 
+                      "&gia=" + gia + "&loai=" + loai;
+
+            // Gọi shipper (fetch) mang lên cho Java
+            fetch(url)
+                .then(res => res.text())
+                .then(ketQua => {
+                    if (ketQua === "OK") {
+                        alert("🎉 Đã thêm sản phẩm thành công vào MySQL!");
+                        location.reload(); // Ép trang web tự động F5 tải lại để hiện hàng mới
+                    } else {
+                        alert("❌ Có lỗi xảy ra, có thể trùng Mã SP!");
+                    }
+                });
+        }
+
+        function xoaSanPham(maSP) {
+            // Hỏi lại cho chắc ăn (tránh bấm nhầm)
+            let xacNhan = confirm("⚠️ Sếp có chắc chắn muốn xóa sản phẩm " + maSP + " không?");
+            if (!xacNhan) return; // Nếu bấm Cancel thì thôi không làm gì cả
+
+            // Gọi shipper mang mã SP đi xóa
+            fetch("http://localhost:8080/api/xoa?ma=" + maSP)
+                .then(res => res.text())
+                .then(ketQua => {
+                    if (ketQua === "OK") {
+                        alert("🗑️ Đã xóa thành công!");
+                        location.reload(); // Tự động F5 lại bảng
+                    } else {
+                        alert("❌ Có lỗi xảy ra, không thể xóa!");
+                    }
+                });
+        }
+
+        function suaGia(maSP, giaCu) {
+            // Lệnh prompt sẽ bật ra 1 ô cho người dùng gõ chữ, hiển thị sẵn giá cũ
+            let giaMoi = prompt("Nhập GIÁ MỚI cho sản phẩm " + maSP + ":", giaCu);
+
+            // Nếu người dùng bấm Hủy (Cancel) hoặc xóa trắng
+            if (giaMoi === null || giaMoi.trim() === "") {
+                return; 
+            }
+
+            // Kiểm tra xem có gõ linh tinh chữ cái vào không
+            if (isNaN(giaMoi) || parseInt(giaMoi) <= 0) {
+                alert("⚠️ Giá tiền phải là một con số hợp lệ!");
+                return;
+            }
+
+            // Gọi shipper mang Giá Mới lên đưa cho Java
+            fetch("http://localhost:8080/api/sua?ma=" + maSP + "&gia=" + giaMoi)
+                .then(res => res.text())
+                .then(ketQua => {
+                    if (ketQua === "OK") {
+                        alert("✅ Đã cập nhật giá mới thành công!");
+                        location.reload(); // Ép F5 tải lại trang
+                    } else {
+                        alert("❌ Có lỗi xảy ra, không thể sửa giá!");
+                    }
+                });
+        }
+
+        // --- HÀM VẼ BẢNG DÙNG CHUNG ---
+        // Bất cứ khi nào nhận được danh sách (từ tải trang, tìm kiếm, sắp xếp), cứ ném vào đây là nó vẽ lại bảng
+        function veLaiBang(danhSach) {
+            let bang = document.getElementById("bang_san_pham");
+            bang.innerHTML = ""; 
+            if (danhSach.length === 0) {
+                bang.innerHTML = "<tr><td colspan='6'>Không tìm thấy sản phẩm nào!</td></tr>";
+                return;
+            }
+            danhSach.forEach(sp => {
+                bang.innerHTML += `
+                    <tr>
+                        <td>${sp.maSP}</td>
+                        <td><b>${sp.tenHang}</b></td>
+                        <td>${sp.mauSac}</td>
+                        <td style="color: red; font-weight: bold;">${sp.giaTien.toLocaleString('vi-VN')} VNĐ</td>
+                        <td>${sp.loai}</td>
+                        <td>
+                            <button onclick="suaGia('${sp.maSP}', ${sp.giaTien})" style="background-color: #ffc107; border: none; padding: 5px; cursor: pointer;">Sửa</button>
+                            <button onclick="xoaSanPham('${sp.maSP}')" style="background-color: #dc3545; color: white; border: none; padding: 5px; cursor: pointer;">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- CÁC CHỨC NĂNG MỚI ---
+        function timKiem() {
+            let tk = document.getElementById("tu_khoa").value;
+            fetch("http://localhost:8080/api/timkiem?tuKhoa=" + encodeURIComponent(tk))
+                .then(res => res.json())
+                .then(danhSach => veLaiBang(danhSach)); // Gọi hàm vẽ bảng
+        }
+
+        function sapXep(kieu) {
+            fetch("http://localhost:8080/api/sapxep?kieu=" + kieu)
+                .then(res => res.json())
+                .then(danhSach => veLaiBang(danhSach));
+        }
+
+        function doiGiaoDien() {
+            // Thay đổi màu nền của body (Giao diện tối)
+            document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(34, 34, 34)" ? "#f4f6f9" : "#222";
+        }
+    </script>
+</body>
+</html>
